@@ -47,8 +47,8 @@ That will complicate adding, removing, programmatically skipping, or reordering 
 ## Message Contents
 
 The message contains the following base properties:
-    - `idempotencyId` - A unique ID used to ensure each step is executed exactly once
-    - `completedStages` - A bitwise flag representing the completed steps. This is stored in the message as well as Redis so we can detect if the stages have been wired up incorrectly and we've ended up in an infinite loop. A bitwise flag allows us to determine if this step has already been completed even if it was several steps earlier.
+- `idempotencyId` - A unique ID used to ensure each step is executed exactly once
+- `completedStages` - A bitwise flag representing the completed steps. This is stored in the message as well as Redis so we can detect if the stages have been wired up incorrectly and we've ended up in an infinite loop. A bitwise flag allows us to determine if this step has already been completed even if it was several steps earlier.
 
 Each step contains its own data as a top-level property. Care needs to be taken here to ensure these properties don't collide so we retain all the required data for the process.
 
