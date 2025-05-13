@@ -5,8 +5,12 @@
 We have an Azure Service Bus Queue and a Azure Function for every step of the multi-step process.
 
 There are two benefits of this approach:
-1. The built-in scaling of Azure Functions means each part of the process can dynamically scale to handle the load - fast steps of the process can be scaled lower and slower steps can be scaled higher, processing more in parallel
+1. Each Azure Function has a single responsibility and very little scaffolding. This means we can build each step focussing on the functionality we want to build and not get bogged down with whether our queue consumer is configured correctly for best performance.
 2. The Azure Service Bus allows us to have a built-in 'snapshot' of the process. If step 3 of a process is broken we can restart the process from there without needing to redo steps 1 and 2.
+
+This specific implementation works well if each step is a similar size and performance. If the steps differ significantly (or if we have one step which is CPU-bound, one which is waiting on a REST API response etc.) this may benefit from splitting into separate Function Apps, using [NPM Workspaces](https://docs.npmjs.com/cli/v11/using-npm/workspaces) to keep the steps logically together and allow common logic and constants (such as queue interaction, redis, etc.) to be shared amongst the steps.
+
+This would then allow us to take advantage of Auzre Functions dynamic scaling capabilities, which would allow slower steps to fan out and process more in parallel while reducing the number of instances running for steps which complete faster.
 
 ### Prerequisites
 - Each step is discrete and atomic. We don't end up in a place where we completed 1/2 of a step and must manage a partial re-execution.
@@ -38,7 +42,7 @@ In this demo application we simply fake doing work by delaying by 1 second befor
 In a real situation the function, queue and property names should be based on the task the step will perform.
 
 Although it simplifies following the order initially, ideally the name shouldn't include an ordering number, e.g. `01_do-thing.ts`.
-That will complicate adding, removing, or reordering steps later.
+That will complicate adding, removing, programmatically skipping, or reordering steps later.
 
 ## Message Contents
 
@@ -95,6 +99,8 @@ This also relies on redis, and the Azure Service Bus duplicate detection feature
 I chose to implement this demo in TypeScript rather than C# for one relatively simple reason. When serializing/deserializing data in .NET, unless you go out of your way to do so, only the data specifically defined in your model will be retained, and all other data will be lost. The way this concept is handled by JavaScript runtimes is more liberal. All data will remain in the models and will be passed through the whole process.
 
 The types (and type guards) defined in TypeScript will allow us to work safely with the data we care about without being overloaded with fields which may or may not be there just so it can be used in other steps.
+
+With NPM workspaces this also allows us to more easily share common logic and constants across the various function apps compared to the more cumbersome mechanisms for this in .NET
 
 ## Limitations of this Demo
 
